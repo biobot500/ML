@@ -1,34 +1,58 @@
 from sklearn.neighbors import KNeighborsClassifier
 import cv2
 import numpy as np
+import pandas as pd
 
-def GetVector(img):
-    i = cv2.imread(img)
+DATA_PATH = './data/'
+def GetVector(img,FromData=True):
+    if FromData==True:
+        i = cv2.imread(DATA_PATH+img)
+    else:
+        i = cv2.imread(img)
+
     i = cv2.resize(i, (224, 224))
     array = np.array(i)
     vector = array.reshape(-1)
     return vector
 
 
+df = pd.read_csv('data.csv');
+images = df[['image_url']]
+
+X = []
 
 
+for index,image in images.iterrows():
 
-X = [
-        GetVector('data/chair1.jpeg'),
-        GetVector('data/chair2.jpeg'),
-        GetVector('data/chair3.jpeg'),
-        GetVector('data/table.JPG'),
-        GetVector('data/table2.jpg'),
-        GetVector('data/table3.jpeg'),
-     ]
+        vector = GetVector(image[0])
+        X.append(vector)
 
-y = ['chair', 'chair', 'chair','table','table','table']
+y = df.name;
+
 neigh = KNeighborsClassifier(n_neighbors=1)
 neigh.fit(X, y)
-print neigh.predict_proba([GetVector('chair1.jpg')])[0][0];
-if neigh.predict_proba([GetVector('chair1.jpg')])[0][0] >= 1.0:
-    print(neigh.predict([GetVector('chair1.jpg')]))
+
+file_name = 'test.jpg'
+
+
+proba = neigh.predict_proba([GetVector(file_name,False)])[0];
+#print(proba)
+#print(neigh.predict([GetVector(file_name, False)]))
+found = False
+for score in proba:
+
+    if score >= 0.9:
+        found = True
+        #print(score)
+
+if found == False:
+    print "NO MATCH FOUND"
+else:
+    print(neigh.predict([GetVector(file_name, False)]))
+
+'''
+if neigh.predict_proba([GetVector(file_name,False)])[0][0] >= 1.0:
+    print(neigh.predict([GetVector(file_name,False)]))
 else:
     print "No Match FOund"
-
-#print(neigh.predict_proba([[0.9]]))
+'''
